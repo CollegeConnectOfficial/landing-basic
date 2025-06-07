@@ -11,27 +11,16 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check localStorage and fetch initial count
+  // Check localStorage and load initial count
   useEffect(() => {
     const voted = localStorage.getItem('collegeconnect-voted') === 'true';
     setHasVoted(voted);
     
-    // Fetch current count from API
-    fetch('/api/counter')
-      .then(res => res.json())
-      .then(data => {
-        setInterestedCount(data.count || 0);
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error('Failed to fetch count:', error);
-        setIsLoading(false);
-        toast({
-          title: "Error",
-          description: "Failed to load current interest count.",
-          variant: "destructive"
-        });
-      });
+    // Load count from localStorage (fallback to 3 as initial count)
+    const storedCount = localStorage.getItem('collegeconnect-count');
+    const initialCount = storedCount ? parseInt(storedCount, 10) : 3;
+    setInterestedCount(initialCount);
+    setIsLoading(false);
   }, []);
 
   const handleInterestClick = async () => {
@@ -40,21 +29,16 @@ const Index = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('/api/counter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Simulate API delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (!response.ok) {
-        throw new Error('Failed to increment counter');
-      }
-      
-      const data = await response.json();
-      setInterestedCount(data.count);
+      const newCount = interestedCount + 1;
+      setInterestedCount(newCount);
       setHasVoted(true);
+      
+      // Store in localStorage
       localStorage.setItem('collegeconnect-voted', 'true');
+      localStorage.setItem('collegeconnect-count', newCount.toString());
       
       toast({
         title: "Thanks for your interest! 🎉",
