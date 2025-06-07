@@ -1,24 +1,23 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, MessageCircle, MapPin, Shield, Mail, CheckCircle } from "lucide-react";
+import { Users, MessageCircle, MapPin, Shield, Heart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [interestedCount, setInterestedCount] = useState(127);
+  const [hasVoted, setHasVoted] = useState(false);
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setIsSubmitted(true);
+  const handleInterestClick = () => {
+    if (!hasVoted) {
+      setInterestedCount(prev => prev + 1);
+      setHasVoted(true);
       toast({
-        title: "You're on the list! 🎉",
-        description: "We'll notify you when CollegeConnect launches at your university.",
+        title: "Thanks for your interest! 🎉",
+        description: "We'll notify you when CollegeConnect launches at Shoolini University.",
       });
-      setEmail("");
     }
   };
 
@@ -75,59 +74,41 @@ const Index = () => {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
-            Your Campus,
+            Connect
             <br />
-            Your Voice,
+            Anonymously
             <br />
-            <span className="text-gray-800">Your Community</span>
+            <span className="text-gray-800">With Your Campus</span>
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-            CollegeConnect is the hyperlocal, anonymous social platform where university students 
-            can share, connect, and discover what's really happening on campus.
+            Make new connections without revealing your identity. Be yourself, or whoever you want to be. 
+            Share thoughts, confessions, and campus life without judgment. Chat freely with fellow students 
+            in a safe, anonymous environment.
           </p>
 
-          {/* Email Signup */}
+          {/* Interest Counter */}
           <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm border-white/20 shadow-xl">
-            <CardContent className="p-6">
-              {!isSubmitted ? (
-                <form onSubmit={handleEmailSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium text-gray-700">
-                      Get early access
-                    </label>
-                    <div className="flex space-x-2">
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your .edu email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="flex-1 bg-white border-gray-200"
-                        required
-                      />
-                      <Button 
-                        type="submit" 
-                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6"
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Join
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    We'll notify you when CollegeConnect launches at your university
+            <CardContent className="p-6 text-center">
+              <div className="space-y-4">
+                <div className="text-3xl font-bold text-gray-800">{interestedCount}</div>
+                <p className="text-lg font-medium text-gray-700">
+                  {interestedCount === 1 ? "student is" : "students are"} already interested
+                </p>
+                <Button 
+                  onClick={handleInterestClick}
+                  disabled={hasVoted}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg"
+                >
+                  <Heart className={`w-5 h-5 mr-2 ${hasVoted ? 'fill-current' : ''}`} />
+                  {hasVoted ? "Thanks for your interest!" : "I'm Interested"}
+                </Button>
+                {hasVoted && (
+                  <p className="text-sm text-gray-500">
+                    We'll notify you when CollegeConnect launches!
                   </p>
-                </form>
-              ) : (
-                <div className="text-center space-y-3">
-                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-                  <h3 className="font-semibold text-gray-800">You're all set!</h3>
-                  <p className="text-sm text-gray-600">
-                    We'll let you know when we launch at your university.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
