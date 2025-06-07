@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,19 +24,19 @@ const Index = () => {
 
   const features = [
     {
+      icon: <Shield className="w-6 h-6" />,
+      title: "Seamless Access",
+      description: "Minimal login, no personal data retained"
+    },
+    {
       icon: <MapPin className="w-6 h-6" />,
-      title: "Hyperlocal",
+      title: "Campus‑Wide Hyperlocal Feed",
       description: "Connect with students on your campus and nearby universities"
     },
     {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Anonymous",
-      description: "Share thoughts, ask questions, and connect without judgment"
-    },
-    {
       icon: <MessageCircle className="w-6 h-6" />,
-      title: "Real Conversations",
-      description: "Genuine discussions about campus life, academics, and more"
+      title: "AI‑Powered Profanity & Abuse",
+      description: "Smart content moderation for a safer community experience"
     },
     {
       icon: <Users className="w-6 h-6" />,
@@ -155,13 +154,9 @@ const Index = () => {
 
         {/* Social Proof */}
         <div className="text-center">
-          <p className="text-gray-500 mb-6">Launching first at these universities:</p>
+          <p className="text-gray-500 mb-6">Launching first at:</p>
           <div className="flex flex-wrap justify-center gap-8 items-center opacity-60">
-            <span className="text-lg font-semibold text-gray-700">Stanford University</span>
-            <span className="text-lg font-semibold text-gray-700">UC Berkeley</span>
-            <span className="text-lg font-semibold text-gray-700">UCLA</span>
-            <span className="text-lg font-semibold text-gray-700">USC</span>
-            <span className="text-lg font-semibold text-gray-700">UCSD</span>
+            <span className="text-lg font-semibold text-gray-700">Shoolini University</span>
           </div>
         </div>
       </main>
