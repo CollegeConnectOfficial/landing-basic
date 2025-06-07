@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,17 +6,69 @@ import { Users, MessageCircle, MapPin, Shield, Heart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [interestedCount, setInterestedCount] = useState(127);
+  const [interestedCount, setInterestedCount] = useState(0);
   const [hasVoted, setHasVoted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInterestClick = () => {
-    if (!hasVoted) {
-      setInterestedCount(prev => prev + 1);
+  // Check localStorage and fetch initial count
+  useEffect(() => {
+    const voted = localStorage.getItem('collegeconnect-voted') === 'true';
+    setHasVoted(voted);
+    
+    // Fetch current count from API
+    fetch('/api/counter')
+      .then(res => res.json())
+      .then(data => {
+        setInterestedCount(data.count || 0);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Failed to fetch count:', error);
+        setIsLoading(false);
+        toast({
+          title: "Error",
+          description: "Failed to load current interest count.",
+          variant: "destructive"
+        });
+      });
+  }, []);
+
+  const handleInterestClick = async () => {
+    if (hasVoted || isSubmitting || isLoading) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/counter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to increment counter');
+      }
+      
+      const data = await response.json();
+      setInterestedCount(data.count);
       setHasVoted(true);
+      localStorage.setItem('collegeconnect-voted', 'true');
+      
       toast({
         title: "Thanks for your interest! 🎉",
         description: "We'll notify you when CollegeConnect launches at Shoolini University.",
       });
+    } catch (error) {
+      console.error('Failed to increment counter:', error);
+      toast({
+        title: "Error",
+        description: "Failed to register your interest. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -82,26 +133,26 @@ const Index = () => {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Make new connections without revealing your identity. Be yourself, or whoever you want to be. 
-            Share thoughts, confessions, and campus life without judgment. Chat freely with fellow students 
-            in a safe, anonymous environment.
+            
           </p>
 
           {/* Interest Counter */}
           <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm border-white/20 shadow-xl">
             <CardContent className="p-6 text-center">
               <div className="space-y-4">
-                <div className="text-3xl font-bold text-gray-800">{interestedCount}</div>
+                <div className="text-3xl font-bold text-gray-800">
+                  {isLoading ? "..." : interestedCount}
+                </div>
                 <p className="text-lg font-medium text-gray-700">
                   {interestedCount === 1 ? "student is" : "students are"} already interested
                 </p>
                 <Button 
                   onClick={handleInterestClick}
-                  disabled={hasVoted}
+                  disabled={hasVoted || isSubmitting || isLoading}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg"
                 >
                   <Heart className={`w-5 h-5 mr-2 ${hasVoted ? 'fill-current' : ''}`} />
-                  {hasVoted ? "Thanks for your interest!" : "I'm Interested"}
+                  {isSubmitting ? "Registering..." : hasVoted ? "Thanks for your interest!" : "I'm Interested"}
                 </Button>
                 {hasVoted && (
                   <p className="text-sm text-gray-500">
@@ -151,7 +202,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="relative z-10 text-center py-8 text-gray-500 text-sm">
-        <p>&copy; 2024 CollegeConnect. Built for students, by students.</p>
+        <p>&copy; 2025 CollegeConnect. Built for students, by students.</p>
       </footer>
     </div>
   );
