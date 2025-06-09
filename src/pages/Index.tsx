@@ -6,49 +6,97 @@ import { Users, MessageCircle, MapPin, Shield, Heart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  // Initialize interestedCount from localStorage, defaulting to 0 if not found
-  const [interestedCount, setInterestedCount] = useState(() => {
-    const storedCount = localStorage.getItem('collegeconnect-interested-count');
-    return storedCount ? parseInt(storedCount, 10) : 0;
-  });
-
-  // Initialize hasVoted from localStorage to prevent multiple clicks from the same user
-  const [hasVoted, setHasVoted] = useState(() => {
-    return localStorage.getItem('collegeconnect-has-voted') === 'true';
-  });
-
-  const [isLoading, setIsLoading] = useState(false); // No longer loading from an API
+  const [interestedCount, setInterestedCount] = useState(0);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Still loading initially from API
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Effect to update localStorage whenever interestedCount or hasVoted changes
+  // Check localStorage for voted status and load initial count from API
   useEffect(() => {
-    localStorage.setItem('collegeconnect-interested-count', interestedCount.toString());
-  }, [interestedCount]);
+    const fetchInitialState = async () => {
+      try {
+        // Try to get the count from the API first
+        const response = await fetch('/api/counter');
+        if (!response.ok) {
+          throw new Error(`API returned status ${response.status}`);
+        }
+        const data = await response.json();
+        setInterestedCount(data.count);
 
-  useEffect(() => {
-    localStorage.setItem('collegeconnect-has-voted', hasVoted.toString());
-  }, [hasVoted]);
+        // After fetching, check localStorage for voted status specific to this browser
+        const voted = localStorage.getItem('collegeconnect-voted') === 'true';
+        setHasVoted(voted);
 
+      } catch (error) {
+        console.error('Failed to fetch count from API:', error);
+        // Fallback: If API fails, try to load count from localStorage, and show a toast
+        const storedCount = localStorage.getItem('collegeconnect-count');
+        const initialCount = storedCount ? parseInt(storedCount, 10) : 3; // Default to 3 if nothing in localStorage
+        setInterestedCount(initialCount);
 
-  const handleInterestClick = () => {
-    // Disable button if already voted or submitting
-    if (hasVoted || isSubmitting) {
+        // Still check localStorage for voted status even if API failed for count
+        const voted = localStorage.getItem('collegeconnect-voted') === 'true';
+        setHasVoted(voted);
+
+        toast({
+          title: "Heads up!",
+          description: "Could not load the latest interest count. Displaying cached data.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false); // Done loading, regardless of success or failure
+      }
+    };
+
+    fetchInitialState();
+  }, []); // Empty dependency array means this runs once on mount
+
+  const handleInterestClick = async () => {
+    // Disable button if already voted, submitting, or still loading initial data
+    if (hasVoted || isSubmitting || isLoading) {
+      console.log('Button click blocked:', { hasVoted, isSubmitting, isLoading });
       return;
     }
 
-    setIsSubmitting(true); // Indicate that a "submission" (local storage update) is in progress
+    setIsSubmitting(true); // Set submitting state to disable the button
 
-    // Simulate an async operation to mimic a backend call (optional, but good for UX)
-    setTimeout(() => {
-      setInterestedCount(prevCount => prevCount + 1);
-      setHasVoted(true); // Mark as voted in the current session
-      setIsSubmitting(false); // Reset submitting state
+    try {
+      // Call the API to increment counter
+      const response = await fetch('/api/counter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        // Attempt to read error message from response body if available
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(`Failed to increment counter: ${errorData.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      setInterestedCount(data.count); // Update count with the new value from the API
+      setHasVoted(true); // Mark as voted for the current session
+
+      // Store in localStorage to prevent multiple votes from same browser
+      localStorage.setItem('collegeconnect-voted', 'true');
+      localStorage.setItem('collegeconnect-count', data.count.toString()); // Store the new count for fallback
 
       toast({
         title: "Thanks for your interest! 🎉",
         description: "We'll notify you when CollegeConnect launches at Shoolini University.",
       });
-    }, 500); // Simulate a 0.5-second network delay
+    } catch (error) {
+      console.error('Failed to increment counter:', error);
+      toast({
+        title: "Error",
+        description: `Failed to register your interest: ${error.message}. Please try again.`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false); // Reset submitting state
+    }
   };
 
   const features = [
@@ -120,26 +168,21 @@ const Index = () => {
             <CardContent className="p-6 text-center">
               <div className="space-y-4">
                 <div className="text-3xl font-bold text-gray-800">
-                  {interestedCount}
+                  {isLoading ? "..." : interestedCount}
                 </div>
                 <p className="text-lg font-medium text-gray-700">
                   {interestedCount === 1 ? "student is" : "students are"} already interested
                 </p>
                 <Button
                   onClick={handleInterestClick}
-                  disabled={hasVoted || isSubmitting}
-                  // Responsive CSS for the button:
-                  // px-4 and text-base are for small screens (mobile-first)
-                  // text-center ensures wrapped text is centered
-                  // sm:whitespace-normal allows text to wrap on small screens (up to sm breakpoint)
-                  // sm:whitespace-nowrap prevents wrapping from the sm breakpoint upwards
-                  // md:px-8 and md:text-lg apply for medium screens and larger
+                  disabled={hasVoted || isSubmitting || isLoading} // Added isLoading to disabled
+                  // Responsive CSS for the button
                   className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3
                              px-4 text-base text-center sm:whitespace-normal
                              md:px-8 md:text-lg md:whitespace-nowrap"
                 >
                   <Heart className={`w-5 h-5 mr-2 ${hasVoted ? 'fill-current' : ''}`} />
-                  {isSubmitting ? "Registering..." : hasVoted ? "Thanks for your interest!" : "I'm Interested"}
+                  {isLoading ? "Loading..." : isSubmitting ? "Registering..." : hasVoted ? "Thanks for your interest!" : "I'm Interested"}
                 </Button>
                 {hasVoted && (
                   <p className="text-sm text-gray-500">
