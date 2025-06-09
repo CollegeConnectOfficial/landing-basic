@@ -7,14 +7,12 @@ import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   // Initialize interestedCount from localStorage, defaulting to 0 if not found
-  // We'll use a unique key for our count, e.g., 'collegeconnect-interested-count'
   const [interestedCount, setInterestedCount] = useState(() => {
     const storedCount = localStorage.getItem('collegeconnect-interested-count');
     return storedCount ? parseInt(storedCount, 10) : 0;
   });
 
   // Initialize hasVoted from localStorage to prevent multiple clicks from the same user
-  // We'll use a unique key for the voted status, e.g., 'collegeconnect-has-voted'
   const [hasVoted, setHasVoted] = useState(() => {
     return localStorage.getItem('collegeconnect-has-voted') === 'true';
   });
@@ -130,7 +128,15 @@ const Index = () => {
                 <Button
                   onClick={handleInterestClick}
                   disabled={hasVoted || isSubmitting}
-                  className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg whitespace-nowrap"
+                  // Responsive CSS for the button:
+                  // px-4 and text-base are for small screens (mobile-first)
+                  // text-center ensures wrapped text is centered
+                  // sm:whitespace-normal allows text to wrap on small screens (up to sm breakpoint)
+                  // sm:whitespace-nowrap prevents wrapping from the sm breakpoint upwards
+                  // md:px-8 and md:text-lg apply for medium screens and larger
+                  className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3
+                             px-4 text-base text-center sm:whitespace-normal
+                             md:px-8 md:text-lg md:whitespace-nowrap"
                 >
                   <Heart className={`w-5 h-5 mr-2 ${hasVoted ? 'fill-current' : ''}`} />
                   {isSubmitting ? "Registering..." : hasVoted ? "Thanks for your interest!" : "I'm Interested"}
