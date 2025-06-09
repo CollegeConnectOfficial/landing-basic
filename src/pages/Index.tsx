@@ -11,16 +11,33 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check localStorage and load initial count
+  // Check localStorage and load initial count from API
   useEffect(() => {
+    // Only check localStorage for voting status, don't assume voted state
     const voted = localStorage.getItem('collegeconnect-voted') === 'true';
+    console.log('localStorage voted status:', voted);
+    console.log('localStorage collegeconnect-voted value:', localStorage.getItem('collegeconnect-voted'));
     setHasVoted(voted);
     
-    // Load count from localStorage (fallback to 3 as initial count)
-    const storedCount = localStorage.getItem('collegeconnect-count');
-    const initialCount = storedCount ? parseInt(storedCount, 10) : 3;
-    setInterestedCount(initialCount);
-    setIsLoading(false);
+    // Load count from API
+    const fetchCount = async () => {
+      try {
+        const response = await fetch('/api/counter');
+        const data = await response.json();
+        console.log('API response:', data);
+        setInterestedCount(data.count);
+      } catch (error) {
+        console.error('Failed to fetch count:', error);
+        // Fallback to localStorage if API fails, but don't assume voting state
+        const storedCount = localStorage.getItem('collegeconnect-count');
+        const initialCount = storedCount ? parseInt(storedCount, 10) : 3;
+        setInterestedCount(initialCount);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCount();
   }, []);
 
   const handleInterestClick = async () => {
@@ -29,16 +46,25 @@ const Index = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Call the API to increment counter
+      const response = await fetch('/api/counter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
-      const newCount = interestedCount + 1;
-      setInterestedCount(newCount);
+      if (!response.ok) {
+        throw new Error('Failed to increment counter');
+      }
+      
+      const data = await response.json();
+      setInterestedCount(data.count);
       setHasVoted(true);
       
-      // Store in localStorage
+      // Store in localStorage to prevent multiple votes from same browser
       localStorage.setItem('collegeconnect-voted', 'true');
-      localStorage.setItem('collegeconnect-count', newCount.toString());
+      localStorage.setItem('collegeconnect-count', data.count.toString());
       
       toast({
         title: "Thanks for your interest! 🎉",
