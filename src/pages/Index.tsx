@@ -6,80 +6,51 @@ import { Users, MessageCircle, MapPin, Shield, Heart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [interestedCount, setInterestedCount] = useState(0);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize interestedCount from localStorage, defaulting to 0 if not found
+  // We'll use a unique key for our count, e.g., 'collegeconnect-interested-count'
+  const [interestedCount, setInterestedCount] = useState(() => {
+    const storedCount = localStorage.getItem('collegeconnect-interested-count');
+    return storedCount ? parseInt(storedCount, 10) : 0;
+  });
+
+  // Initialize hasVoted from localStorage to prevent multiple clicks from the same user
+  // We'll use a unique key for the voted status, e.g., 'collegeconnect-has-voted'
+  const [hasVoted, setHasVoted] = useState(() => {
+    return localStorage.getItem('collegeconnect-has-voted') === 'true';
+  });
+
+  const [isLoading, setIsLoading] = useState(false); // No longer loading from an API
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check localStorage and load initial count from API
+  // Effect to update localStorage whenever interestedCount or hasVoted changes
   useEffect(() => {
-    // Only check localStorage for voting status, don't assume voted state
-    const voted = localStorage.getItem('collegeconnect-voted') === 'true';
-    console.log('localStorage voted status:', voted);
-    console.log('localStorage collegeconnect-voted value:', localStorage.getItem('collegeconnect-voted'));
-    setHasVoted(voted);
-    
-    // Load count from API
-    const fetchCount = async () => {
-      try {
-        const response = await fetch('/api/counter');
-        const data = await response.json();
-        console.log('API response:', data);
-        setInterestedCount(data.count);
-      } catch (error) {
-        console.error('Failed to fetch count:', error);
-        // Fallback to localStorage if API fails, but don't assume voting state
-        const storedCount = localStorage.getItem('collegeconnect-count');
-        const initialCount = storedCount ? parseInt(storedCount, 10) : 3;
-        setInterestedCount(initialCount);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchCount();
-  }, []);
+    localStorage.setItem('collegeconnect-interested-count', interestedCount.toString());
+  }, [interestedCount]);
 
-  const handleInterestClick = async () => {
-    if (hasVoted || isSubmitting || isLoading) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Call the API to increment counter
-      const response = await fetch('/api/counter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to increment counter');
-      }
-      
-      const data = await response.json();
-      setInterestedCount(data.count);
-      setHasVoted(true);
-      
-      // Store in localStorage to prevent multiple votes from same browser
-      localStorage.setItem('collegeconnect-voted', 'true');
-      localStorage.setItem('collegeconnect-count', data.count.toString());
-      
+  useEffect(() => {
+    localStorage.setItem('collegeconnect-has-voted', hasVoted.toString());
+  }, [hasVoted]);
+
+
+  const handleInterestClick = () => {
+    // Disable button if already voted or submitting
+    if (hasVoted || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true); // Indicate that a "submission" (local storage update) is in progress
+
+    // Simulate an async operation to mimic a backend call (optional, but good for UX)
+    setTimeout(() => {
+      setInterestedCount(prevCount => prevCount + 1);
+      setHasVoted(true); // Mark as voted in the current session
+      setIsSubmitting(false); // Reset submitting state
+
       toast({
         title: "Thanks for your interest! 🎉",
         description: "We'll notify you when CollegeConnect launches at Shoolini University.",
       });
-    } catch (error) {
-      console.error('Failed to increment counter:', error);
-      toast({
-        title: "Error",
-        description: "Failed to register your interest. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    }, 500); // Simulate a 0.5-second network delay
   };
 
   const features = [
@@ -143,7 +114,7 @@ const Index = () => {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-            
+            {/* Add a descriptive subtitle here if needed */}
           </p>
 
           {/* Interest Counter */}
@@ -151,15 +122,15 @@ const Index = () => {
             <CardContent className="p-6 text-center">
               <div className="space-y-4">
                 <div className="text-3xl font-bold text-gray-800">
-                  {isLoading ? "..." : interestedCount}
+                  {interestedCount}
                 </div>
                 <p className="text-lg font-medium text-gray-700">
                   {interestedCount === 1 ? "student is" : "students are"} already interested
                 </p>
-                <Button 
+                <Button
                   onClick={handleInterestClick}
-                  disabled={hasVoted || isSubmitting || isLoading}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg"
+                  disabled={hasVoted || isSubmitting}
+                  className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg whitespace-nowrap"
                 >
                   <Heart className={`w-5 h-5 mr-2 ${hasVoted ? 'fill-current' : ''}`} />
                   {isSubmitting ? "Registering..." : hasVoted ? "Thanks for your interest!" : "I'm Interested"}
@@ -177,7 +148,7 @@ const Index = () => {
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
           {features.map((feature, index) => (
-            <Card 
+            <Card
               key={index}
               className="bg-white/70 backdrop-blur-sm border-white/20 hover:bg-white/80 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
